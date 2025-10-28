@@ -28,7 +28,6 @@ const EventSchema = new Schema<IEvent>(
     },
     slug: {
       type: String,
-      unique: true,
       lowercase: true,
       trim: true,
     },
@@ -122,11 +121,11 @@ EventSchema.pre("save", function (next) {
     this.date = parsedDate.toISOString().split("T")[0];
   }
 
-  // Normalize time to HH:MM format
+    // Normalize time to 24h HH:MM format
   if (this.isModified("time")) {
-    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+      const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/
     if (!timeRegex.test(this.time)) {
-      return next(new Error("Time must be in HH:MM format"));
+        return next(new Error("Time must be in 24h HH:MM format"));
     }
   }
 
@@ -134,7 +133,8 @@ EventSchema.pre("save", function (next) {
 });
 
 // Add unique index on slug for faster lookups and uniqueness enforcement
-EventSchema.index({ slug: 1 });
+EventSchema.index({ slug: 1 }, { unique: true });
+
 
 const Event: Model<IEvent> = models?.Event || model<IEvent>("Event", EventSchema);
 
