@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Event from "@/database/event.model";
 import { v2 as cloudinary } from "cloudinary";
+import { STATUS } from "@/lib/api/status";
 
-const INTERNAL_SERVER_ERROR = { status: 500 };
-const BAD_REQUEST = { status: 400 };
-const OK_REQUEST = { status: 200 };
+
 
 export async function POST(request: NextRequest): Promise<any> {
   try {
@@ -16,11 +15,12 @@ export async function POST(request: NextRequest): Promise<any> {
     try {
       event = Object.fromEntries(formData.entries());
     } catch (e) {
+      console.error(e);
       return NextResponse.json(
         {
           message: "Invalid JSON data format",
         },
-        BAD_REQUEST
+        STATUS.BAD_REQUEST
       );
     }
 
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest): Promise<any> {
     if (!file) {
       return NextResponse.json(
         { message: "Image file is required" },
-        BAD_REQUEST
+        STATUS.BAD_REQUEST
       );
     }
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest): Promise<any> {
     const createdEvent = await Event.create(event);
     return NextResponse.json(
       { message: "Event created successfully", event: createdEvent },
-      OK_REQUEST
+      STATUS.OK
     );
   } catch (e) {
     console.error(e);
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest): Promise<any> {
         message: "Event creation Failed ",
         error: e instanceof Error ? e.message : "Unknown",
       },
-      INTERNAL_SERVER_ERROR
+      STATUS.SERVER_ERROR
     );
   }
 }
@@ -66,13 +66,16 @@ export async function POST(request: NextRequest): Promise<any> {
 export async function GET() {
   try {
     await connectDB();
-    const events = await Event.find().sort({createdAt:-1})
+    const events = await Event.find().sort({ createdAt: -1 });
 
-    return NextResponse.json({message: 'Events fetched succesfully', events}, OK_REQUEST)
+    return NextResponse.json(
+      { message: "Events fetched succesfully", events },
+      STATUS.OK
+    );
   } catch (e) {
     return NextResponse.json(
       { message: "Event fetching failed: ", error: e },
-      INTERNAL_SERVER_ERROR
+      STATUS.SERVER_ERROR
     );
   }
 }
